@@ -1,9 +1,12 @@
+# coding=utf-8
 from bs4 import BeautifulSoup
 import urllib
 from urllib.request import urlopen
 import helper
 import socket
 import re
+import sys
+sys.setrecursionlimit(100)
 
 
 class ARTICLE_EXTRACTOR(object):
@@ -14,22 +17,71 @@ class ARTICLE_EXTRACTOR(object):
         self.title = title
         self.article_url = article_url
         self.article_soup = ''
+        self.success = False
         self.attempt_to_connect()
-        self.keywords_list = self.get_keywords_list()
-        self.misc_soup = self.article_soup.find(
-            'div', style='text-align:left;', class_='xx_font')
-        self.misc_soup_list = self.misc_soup.find_all(['a', 'font'])
-        self.misc_soup_txt = self.misc_soup.get_text()
-        self.misc_soup_labels_list = self.misc_soup.find_all('font')
+        self.misc_soup = ''
+        self.misc_soup_list = []
+        self.keywords_list = []
+        self.misc_soup_txt = ''
+        self.misc_soup_labels_list = []
         # usually contains information about 【作者单位】【基金】【分类号】
-        self.source_authors_list = self.get_source_authors_list()
-        self.institutes_list = self.get_institutes_list()
-        self.institutes_author_match_num =\
-            self.get_institutes_author_match_num()
+        self.source_authors_list = []
+        self.institutes_list = []
+        self.institutes_author_match_num = None
+        if self.success:
+            self.update_instance()
+
+    def update_instance(self):
+        if self.success:
+            self.get_misc_soup()
+            self.get_misc_soup_list()
+            if self.success:
+                self.misc_soup_txt = self.misc_soup.get_text()
+                self.misc_soup_labels_list = self.get_misc_soup_list()
+                self.misc_soup_labels_list = self.misc_soup.find_all('font')
+                self.source_authors_list = self.get_source_authors_list()
+                self.institutes_list = self.get_institutes_list()
+                self.institutes_author_match_num = self.get_institutes_author_match_num()
+                self.keywords_list = self.get_keywords_list()
 
     def get_source_authors(self):
-        authors_list = self.get_source_authors_list()
-        return helper.join_with_splash(authors_list)
+        return helper.join_with_splash(self.source_authors_list)
+
+    def get_misc_soup(self):
+        if self.article_soup is not None:
+            self.misc_soup = self.article_soup.find(
+                'div', style='text-align:left;', class_='xx_font')
+        else:
+            try:
+                attempt = 1
+                while attempt < 50 and self.article_soup is None:
+                    self.attempt_to_connect()
+                self.get_misc_soup()
+            except RuntimeError:
+                print('网路故障，舍弃该文章。\n')
+
+    def get_misc_soup_list(self):
+        if self.misc_soup is not None:
+            try:
+                self.misc_soup_list = self.misc_soup.get_text(
+                    u'/t').split('/t')[1:]
+                self.misc_soup_list.remove('：\r\n                ')
+            except ValueError:
+                self.misc_soup_list = self.misc_soup.get_text(
+                    u'/t').split('/t')[1:]
+        else:
+            try:
+                attempt = 0
+                while attempt < 50 and self.misc_soup is None:
+                    self.get_misc_soup()
+                    attempt += 1
+                    if attempt == 50:
+                        self.attempt_to_connect()
+                        self.get_misc_soup()
+                self.get_misc_soup_list()
+            except RuntimeError:
+                print('网络故障,舍弃该文章。\n')
+                self.success = False
 
     def get_source_authors_list(self):
         authors_soup = self.article_soup.find(
@@ -44,7 +96,24 @@ class ARTICLE_EXTRACTOR(object):
         return helper.join_with_splash(self.get_misc_soup_content('【基金】：'))
 
     def get_institutes_list(self):
-        institutes_list = self.get_misc_soup_content('【作者单位】')
+        try:
+            institutes_list = self.get_misc_soup_content('【作者单位】')
+            if institutes_list == []:
+                raise ValueError
+        except (ValueError, AttributeError):
+            try:
+                institutes_list = self.get_misc_soup_content('【作者单位】：')
+                if institutes_list == []:
+                    raise AttributeError
+            except AttributeError:
+                try:
+                    institutes_list = self.get_misc_soup_content('【学位授予单位】：')
+                    if institutes_list == []:
+                        institutes_list = [self.misc_soup_list[1]]
+                        if institutes_list[1] == '':
+                            institutes_list = []
+                except IndexError:
+                    institutes_list = []
         return helper.split_with_semi_colon(institutes_list)
 
     def get_institutes_author_match_num(self):
@@ -85,18 +154,18 @@ class ARTICLE_EXTRACTOR(object):
         if helper.is_in_soup_txt(label, self.misc_soup_txt):
             label_soup = self.misc_soup.find(
                 text=label).find_parent().find_parent()
-            label_index = self.misc_soup_list.index(label_soup)
+            if label_soup is None:
+                # strengthen the stability
+                return self.get_misc_soup_content(label)
+            label_index = self.misc_soup_list.index(label)
             label_list_index = self.misc_soup_labels_list.index(label_soup)
             if label_list_index == len(self.misc_soup_labels_list) - 1:
                 end_index = 1  # there is only one label
             else:
                 end_list_index = label_list_index + 1
                 end_soup = self.misc_soup_labels_list[end_list_index]
-                end_index = self.misc_soup_list.index(end_soup)
-            content_soup_list = self.misc_soup_list[label_index + 1:end_index]
-            content_list = []
-            for content_soup in content_soup_list:
-                content_list.append(content_soup.get_text())
+                end_index = self.misc_soup_list.index(end_soup.get_text())
+            content_list = self.misc_soup_list[label_index + 1:end_index]
             return content_list
         else:
             return []
@@ -107,11 +176,22 @@ class ARTICLE_EXTRACTOR(object):
         return helper.join_with_splash(self.keywords_list)
 
     def get_keywords_list(self):
-        return self.article_soup.find(
-            attrs={"name": "keywords"})['content'].split(' ')
+        try:
+            keyword_txt = self.article_soup.find("meta",
+                                                 attrs={'name': 'autoKeywords'}).get('content')
+            if ';' in keyword_txt:
+                return keyword_txt.split(';')
+            else:
+                return keyword_txt.split(' ')
+        except AttributeError:
+            return []
 
     def get_time(self):
-        time_text = self.article_soup.find('font', color='#0080ff').get_text()
+        try:
+            time_text = self.article_soup.find(
+                'font', color='#0080ff').get_text()
+        except AttributeError:
+            time_text = self.article_soup.find('font', color="#000").get_text()
         return re.search(r"[0-9]*", time_text).group()
 
     def get_fund_type(self):
@@ -120,16 +200,23 @@ class ARTICLE_EXTRACTOR(object):
             return '教育部基金/'
         elif '国' in fund_source and '社' in fund_source:
             return '国家社科基金/'
+        elif '国' not in fund_source and '社' in fund_source:
+            return '地方省市社科基金/'
         else:
-            return fund_source
+            return ''
 
         # def get_citations(self):
 
     def get_classification_num(self):
-        font_classification = self.misc_soup.find(
-            text='【分类号】：')
-        classification_num = font_classification.next_element
-        return classification_num
+        try:
+            font_classification = self.misc_soup.find(
+                text='【分类号】：')
+            classification_num = font_classification.next_element
+            if type(classification_num) is not str:
+                raise TypeError
+            return classification_num
+        except (AttributeError, TypeError):
+            return ''
 
     def get_journal(self):
         journal_soup = self.article_soup.find(
@@ -138,7 +225,7 @@ class ARTICLE_EXTRACTOR(object):
 
     def get_citations(self):
         cankao_soup = self.article_soup.find(
-            'div', id='cankao')
+            'div', id=['cankao', 'div_Ref'])
         citations = ''
         if cankao_soup is not None:
             citations_soup = cankao_soup.find_all('td', width='676')
@@ -160,29 +247,70 @@ class ARTICLE_EXTRACTOR(object):
         return helper.get_nth_element(self.institutes_list, 0)
 
     def get_all_article_info(self):
-        return [self.get_source_authors(), self.get_funding_source(),
-                self.get_journal(
-        ), self.get_first_institute(), self.get_institutes_names(),
-            self.get_first_author(), self.get_classification_num(), self.get_time(),
-            self.get_keywords(), self.get_fund_type(), self.get_citations()]
+        if self.success:
+            return [self.get_source_authors(), self.get_funding_source(),
+                    self.get_journal(), self.get_first_institute(),
+                    self.get_institutes_names(), self.get_first_author(),
+                    self.get_classification_num(), self.get_time(),
+                    self.get_keywords(), self.get_fund_type(), self.get_citations()]
+        else:
+            return ['', '', '', '', '', '', '', '', '', '', '']
 
     def attempt_to_connect(self):
         attempts = 0
-        success = False
-        while attempts < 50 and not success:
+        while attempts < 50 and not self.success:
             try:
                 html = urlopen(self.article_url)
                 self.article_soup = BeautifulSoup(html, 'html.parser')
                 socket.setdefaulttimeout(10)  # 设置10秒后连接超时
-                success = True
+                self.success = True
             except socket.error:
                 attempts += 1
                 print("第" + str(attempts) + "次重试！！")
                 if attempts == 50:
+                    self.success = False
+                    print("此网页无法打开！")
                     break
-            except urllib.error:
+            except OSError:
                 attempts += 1
                 print("第" + str(attempts) + "次重试！！")
                 if attempts == 50:
+                    self.success = False
+                    print("此网页无法打开！")
                     break
+            except RuntimeError:
+                self.success = False
+                print("此网页无法打开！")
+                break
 
+# # test = ARTICLE_EXTRACTOR(
+# #     'sdfa', 'http://epub.cnki.net/grid2008/detail.aspx?filename=ZGJT201809022&dbname=CJFNPREP')
+
+
+# test = ARTICLE_EXTRACTOR('dfas', 'http://cdmd.cnki.com.cn/Article/CDMD-10269-1014318220.htm')
+# # test = ARTICLE_EXTRACTOR(
+# #     'sdfa', 'http://cdmd.cnki.com.cn/Article/CDMD-10418-1017828685.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'dsaf', 'http://youxian.cnki.com.cn/yxdetail.aspx?filename=YJSY201804010&dbname=CJFDPREP')
+# test = ARTICLE_EXTRACTOR(
+#     'dfa', 'http://cpfd.cnki.com.cn/Article/CPFDTOTAL-LGJX201704002011.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'dsaf', 'http://www.cnki.com.cn/Article/CJFDTOTAL-ZXJJ201511026.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'df', 'http://www.cnki.com.cn/Article/CJFDTOTAL-FLSH201506039.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'dfaasdf', 'http://www.cnki.com.cn/Article/CJFDTOTAL-YDJY201309257.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'asdffd', 'http://www.cnki.com.cn/Article/CJFDTOTAL-YDJY201310390.htm')
+# test = ARTICLE_EXTRACTOR('dfas', 'http://www.cnki.com.cn/Article/CJFDTOTAL-ZYDC201516004.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'DASF', 'http://www.cnki.com.cn/Article/CJFDTOTAL-YWTD201608025.htm')
+# test = ARTICLE_EXTRACTOR('dsf', 'http://www.cnki.com.cn/Article/CJFDTOTAL-KWYW201522038.htm')
+# test = ARTICLE_EXTRACTOR('dfa', 'http://www.cnki.com.cn/Article/CJFDTOTAL-ZYDC201519003.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'dsfa', 'http://www.cnki.com.cn/Article/CJFDTOTAL-JXGL198704006.htm')
+# test = ARTICLE_EXTRACTOR(
+#     'sdfasg', 'http://youxian.cnki.com.cn/yxdetail.aspx?filename=CZSK201603013&dbname=CJFDPREN')
+# test = ARTICLE_EXTRACTOR(
+#     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
+# print(test.get_all_article_info())

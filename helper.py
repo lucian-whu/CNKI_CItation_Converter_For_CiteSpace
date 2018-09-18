@@ -105,3 +105,7 @@ def get_nth_element(lst, n):
         return ''
     else:
         return lst[n]
+
+
+def split_with_puctional(txt):
+    return re.sub("[【】：]+", '\t', txt)[2:].split('\t')

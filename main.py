@@ -1,3 +1,4 @@
+#coding=utf-8
 from cnki_excel_converter import CNKI_EXCEL_CONVERTOR
 
 if __name__ == '__main__':

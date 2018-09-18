@@ -1,7 +1,8 @@
+#coding=utf-8
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.parse import quote
-import xlwt
+import xlsxwriter
 import math
 import os
 import helper
@@ -29,7 +30,7 @@ class CNKI_EXCEL_CONVERTOR(object):
         self.num_per_page = 15
         self.filename_prefix = ""
         self.filename_postfix = "cnki_to_text"
-        self.file_extension = ['.txt', '.xls']
+        self.file_extension = ['.txt', '.xlsx']
         self.data_path = ''
         self.txt_name = ''
         self.excel_name = ''
@@ -46,6 +47,7 @@ class CNKI_EXCEL_CONVERTOR(object):
               "el文件将会是详细的信息。为了链接速度更快，请您最好使用教育网！\n 接下来，我们开始第一步！ \n")
         self.ask_for_search_parameters(self.search_paras)
         self.config_to_search_url()
+        print(self.search_url)
         self.update_soup(self.search_url)
         self.ask_for_page_range()
 
@@ -70,6 +72,7 @@ class CNKI_EXCEL_CONVERTOR(object):
         try:
             max_item = helper.get_num_from_re(
                 self.soup.find('span', class_="page-sum").get_text())
+            print('共搜索到' + str(max_item) + '篇文献')
             self.maxpage = math.ceil(max_item / self.num_per_page)
         except AttributeError:
             print("搜索结果太少，请重新定义搜索参数")
@@ -103,14 +106,15 @@ class CNKI_EXCEL_CONVERTOR(object):
         self.filename_prefix = ""
         for para in config_copy.keys():
             self.filename_prefix += para[:2] + '-' + config_copy[para] + '-'
-            url_keywords += para + "%3a" + quote(config_copy[para]) + "+"
+            if config_copy[para] != '\u3000':
+                url_keywords += para + "%3a" + quote(config_copy[para]) + "+"
 
         if url_keywords == "":
             print("你没有搜索参数，请重新输入！")
             self.ask_for_search_parameters(self.search_paras)
             url_keywords = self.config_to_search_url()
 
-        self.search_url = "http://search.cnki.com.cn/search.aspx?q=" + \
+        self.search_url = "http://search.cnki.com.cn/search.aspx?q=" +\
             url_keywords[0:-1] + "&cluster=all&val=&rank=relevant&p="
         return url_keywords
 
@@ -140,6 +144,7 @@ class CNKI_EXCEL_CONVERTOR(object):
             self.filename_postfix + '-data'
         self.data_path = helper.mk_data_dir(self.data_path, 0)
         self.txt_name = self.get_txt_name()
+        self.excel_name = self.get_excel_name()
         txt = open(helper.get_file_path(self.data_path, self.txt_name),
                    'a+', encoding='utf-8')
 
@@ -189,10 +194,9 @@ class CNKI_EXCEL_CONVERTOR(object):
         article_urls_and_titles = txt.readlines()
 
         # make a template for the excel according the CSSCI txt template
-        self.excel_name = self.get_excel_name()
         excel_path = helper.get_file_path(self.data_path, self.excel_name)
-        excel = xlwt.Workbook(excel_path)
-        sheet = excel.add_sheet('data')
+        excel = xlsxwriter.Workbook(excel_path)
+        sheet = excel.add_worksheet()
         print("\n \t \t \t \t \t ************* 开始文章详情页爬虫" +
               " ************* \t \t \t \t \t \n")
         for i in range(len(self.CSSCI_categories)):
@@ -210,13 +214,20 @@ class CNKI_EXCEL_CONVERTOR(object):
             title = article_url_and_title_list[1]
             article = article_extractor.ARTICLE_EXTRACTOR(title, article_url)
             article_infos = [title, ''] + article.get_all_article_info()
+            # print(article_infos)
             for j in range(len(article_infos)):
                 info = article_infos[j]
                 sheet.write(i + 1, j, info)
-        excel.save(excel_path)
+            else:
+                pass
+        excel.close()
         txt.close()
 
     def convert(self):
         self.introduction()
         self.get_search_results()
         self.get_article_results()
+
+# test = CNKI_EXCEL_CONVERTOR()
+# test.introduction()
+# test.get_article_results()
