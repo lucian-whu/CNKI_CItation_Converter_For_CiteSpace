@@ -2,8 +2,6 @@ import re
 import sys
 import os
 import errno
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
 
 
 def get_what_you_want_from_re(pattern, txt):
@@ -72,6 +70,7 @@ def mk_file_dir(path):
         filename = prefix + '_' + str(count) + postfix
     return filename
 
+
 def get_file_path(upper_path, filename):
     return upper_path + '/' + filename
 
@@ -127,14 +126,17 @@ def none_to_empty_string(txt):
     else:
         return str(txt)
 
+
 def hasNumbers(inputString):
     return bool(re.search(r'\d', inputString))
-    
+
+
 def have_another_choice(txt, another_choice):
     if txt is None:
         return another_choice
     else:
         return txt
+
 
 def choose_data_path(self):
     file_list = os.listdir('.')

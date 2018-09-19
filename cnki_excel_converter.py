@@ -1,9 +1,8 @@
-#coding=utf-8
+# coding=utf-8
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.parse import quote
 from openpyxl import Workbook
-from openpyxl.worksheet.table import Table, TableStyleInfo
 import math
 import os
 import helper
@@ -55,43 +54,40 @@ class CNKI_EXCEL_CONVERTOR(object):
         self.ask_for_page_range()
         self.settle_filename()
         self.settle_filter()
-    
+
     def settle_filter(self):
         self.ask_only_filter_or_phd()
         filename = self.get_filter_journals_filename()
-        self.get_filter_journals(filename)
+        self.filter_journals = self.get_filter_journals(filename)
 
-    def ask_only_filter_or_phd():
-        if helper.query_yes_no('你是否只想拥有您自己定义的期刊和硕博论文？')：
+    def ask_only_filter_or_phd(self):
+        if helper.query_yes_no('您是否只需要自己设定的过滤期刊名称和硕博士论文？'):
             self.only_filter_or_phd = True
         else:
             self.only_filter_or_phd = False
 
     def get_filter_journals_filename(self):
         default_filename = 'journal_filter.txt'
-        if os.path.exits(helper.get_file_path(self.data_path, default_filename)):
-            if helper.query_yes_no('你想使用默认过滤期刊名文件吗？（默认文件名为 ‘' + default_filename'’）'):
+        if os.path.exists(helper.get_file_path(os.getcwd(), default_filename)):
+            if helper.query_yes_no('你想使用默认过滤期刊名文件吗？（默认文件名为 ‘' + default_filename + '’）'):
                 return default_filename
         else:
-            filename =  input('请输入过滤期刊文件名：')
-                if filename == '':
-                    print('文件不可为空'！)
-                    return self.get_filter_journals_filename()
+            filename = input('请输入过滤期刊文件名：')
+            if filename == '':
+                print('文件不可为空！')
+                return self.get_filter_journals_filename()
             return filename
 
-    def get_filter_journals(filter_name):
-        filter_journals = ()
+    def get_filter_journals(self, filter_name):
         try:
-            filter_txt = open(filter_name)
-            for line in filter_txt.readlines():
-                filter_journals.add(line)
-        except FileNotFoundError:
+            return set(line.strip() for line in open(filter_name))
+        except OSError:
             print('没找到该文件！请重新输入过滤期刊名文件名称。')
             self.get_filter_journals(self.get_filter_journals_filename())
         return filter_journals
 
-    def is__in_filter_or_phd(first_institute, journal):
-        return journal in self.filter_journals or first_institute = journal
+    def is_in_filter_or_phd(self, first_institute, journal):
+        return journal in self.filter_journals or first_institute == journal
 
     def ask_for_page_range(self):
         self.get_maxpage()
@@ -188,7 +184,6 @@ class CNKI_EXCEL_CONVERTOR(object):
         self.txt_name = self.get_txt_name()
         self.excel_name = self.get_excel_name()
 
-
     def get_search_results(self):
         txt = open(helper.get_file_path(self.data_path, self.txt_name),
                    'a+', encoding='utf-8')
@@ -260,11 +255,11 @@ class CNKI_EXCEL_CONVERTOR(object):
             article_infos = [title, ''] + article.get_all_article_info()
             # print(article_infos)
             if self.only_filter_or_phd:
-                if self.is__in_filter_or_phd(article_infos[5], article_infos[4]):
+                if self.is_in_filter_or_phd(article_infos[5], article_infos[4]):
                     sheet.append(article_infos)
             else:
                 sheet.append(article_infos)
-        excel.close(excel_path)
+        excel.save(excel_path)
         txt.close()
 
     def convert(self):

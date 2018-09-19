@@ -1,6 +1,5 @@
 # coding=utf-8
 from bs4 import BeautifulSoup
-import urllib
 from urllib.request import urlopen
 import helper
 import socket
@@ -30,8 +29,6 @@ class ARTICLE_EXTRACTOR(object):
         self.institutes_author_match_num = None
         if self.success:
             self.update_instance()
-
-        
 
     def update_instance(self):
         if self.success:
@@ -215,9 +212,9 @@ class ARTICLE_EXTRACTOR(object):
                 text='【分类号】：')
             classification_num = font_classification.next_element
             if helper.hasNumbers(classification_num):
-               return classification_num
+                return classification_num
             else:
-               raise TypeError
+                raise TypeError
         except (AttributeError, TypeError):
             return ''
 
@@ -316,4 +313,4 @@ class ARTICLE_EXTRACTOR(object):
 #     'sdfasg', 'http://youxian.cnki.com.cn/yxdetail.aspx?filename=CZSK201603013&dbname=CJFDPREN')
 # test = ARTICLE_EXTRACTOR(
 #     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
-#print(test.get_all_article_info())
+# print(test.get_all_article_info())
