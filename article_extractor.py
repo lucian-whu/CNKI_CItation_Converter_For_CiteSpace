@@ -31,6 +31,8 @@ class ARTICLE_EXTRACTOR(object):
         if self.success:
             self.update_instance()
 
+        
+
     def update_instance(self):
         if self.success:
             self.get_misc_soup()
@@ -212,9 +214,10 @@ class ARTICLE_EXTRACTOR(object):
             font_classification = self.misc_soup.find(
                 text='【分类号】：')
             classification_num = font_classification.next_element
-            if type(classification_num) is not str:
-                raise TypeError
-            return classification_num
+            if helper.hasNumbers(classification_num):
+               return classification_num
+            else:
+               raise TypeError
         except (AttributeError, TypeError):
             return ''
 
@@ -305,7 +308,7 @@ class ARTICLE_EXTRACTOR(object):
 # test = ARTICLE_EXTRACTOR('dfas', 'http://www.cnki.com.cn/Article/CJFDTOTAL-ZYDC201516004.htm')
 # test = ARTICLE_EXTRACTOR(
 #     'DASF', 'http://www.cnki.com.cn/Article/CJFDTOTAL-YWTD201608025.htm')
-# test = ARTICLE_EXTRACTOR('dsf', 'http://www.cnki.com.cn/Article/CJFDTOTAL-KWYW201522038.htm')
+#test = ARTICLE_EXTRACTOR('dsf', 'http://www.cnki.com.cn/Article/CJFDTOTAL-KWYW201522038.htm')
 # test = ARTICLE_EXTRACTOR('dfa', 'http://www.cnki.com.cn/Article/CJFDTOTAL-ZYDC201519003.htm')
 # test = ARTICLE_EXTRACTOR(
 #     'dsfa', 'http://www.cnki.com.cn/Article/CJFDTOTAL-JXGL198704006.htm')
@@ -313,4 +316,4 @@ class ARTICLE_EXTRACTOR(object):
 #     'sdfasg', 'http://youxian.cnki.com.cn/yxdetail.aspx?filename=CZSK201603013&dbname=CJFDPREN')
 # test = ARTICLE_EXTRACTOR(
 #     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
-# print(test.get_all_article_info())
+#print(test.get_all_article_info())

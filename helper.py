@@ -62,6 +62,16 @@ def mk_data_dir(path, count):
     return path
 
 
+def mk_file_dir(path):
+    postfix = re.search(r'\.[A-Za-z]*', path).group()
+    prefix = path[:-len(postfix)]
+    filename = prefix + postfix
+    count = 0
+    while os.path.exists(filename):
+        count += 1
+        filename = prefix + '_' + str(count) + postfix
+    return filename
+
 def get_file_path(upper_path, filename):
     return upper_path + '/' + filename
 
@@ -109,3 +119,37 @@ def get_nth_element(lst, n):
 
 def split_with_puctional(txt):
     return re.sub("[【】：]+", '\t', txt)[2:].split('\t')
+
+
+def none_to_empty_string(txt):
+    if txt is None:
+        return ''
+    else:
+        return str(txt)
+
+def hasNumbers(inputString):
+    return bool(re.search(r'\d', inputString))
+    
+def have_another_choice(txt, another_choice):
+    if txt is None:
+        return another_choice
+    else:
+        return txt
+
+def choose_data_path(self):
+    file_list = os.listdir('.')
+    dir_list = []
+    i = 0
+    print("你可以选择数据文件夹有：")
+    for file in file_list:
+        if os.path.isdir(file):
+            print(str(i) + ') ' + file)
+            dir_list.append(file)
+            i += 1
+    choice = input('你选择几号文件夹？(输入数字即可)')
+    try:
+        choice = int(choice)
+    except ValueError:
+        print('请输入数字！')
+        self.choose_data_path()
+    self.data_path = dir_list[i]

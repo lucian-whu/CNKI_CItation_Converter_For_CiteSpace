@@ -2,12 +2,13 @@
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.parse import quote
-import xlsxwriter
+from openpyxl import Workbook
+from openpyxl.worksheet.table import Table, TableStyleInfo
 import math
 import os
 import helper
 import socket
-import article_extractor
+from article_extractor import ARTICLE_EXTRACTOR
 import urllib
 
 
@@ -39,6 +40,8 @@ class CNKI_EXCEL_CONVERTOR(object):
                                  '【机构名称】', '【第一作者】', '【中图类号】',
                                  '【年代卷期】', '【关 键 词】', '【基金类别】',
                                  '【参考文献】']
+        self.filter_journals = ()
+        self.only_filter_or_phd = False
 
     def introduction(self):
         print("`你好，我来帮你把找到CNKI文献的参考文献数据吧！ 第一步我们要" +
@@ -50,6 +53,45 @@ class CNKI_EXCEL_CONVERTOR(object):
         print(self.search_url)
         self.update_soup(self.search_url)
         self.ask_for_page_range()
+        self.settle_filename()
+        self.settle_filter()
+    
+    def settle_filter(self):
+        self.ask_only_filter_or_phd()
+        filename = self.get_filter_journals_filename()
+        self.get_filter_journals(filename)
+
+    def ask_only_filter_or_phd():
+        if helper.query_yes_no('你是否只想拥有您自己定义的期刊和硕博论文？')：
+            self.only_filter_or_phd = True
+        else:
+            self.only_filter_or_phd = False
+
+    def get_filter_journals_filename(self):
+        default_filename = 'journal_filter.txt'
+        if os.path.exits(helper.get_file_path(self.data_path, default_filename)):
+            if helper.query_yes_no('你想使用默认过滤期刊名文件吗？（默认文件名为 ‘' + default_filename'’）'):
+                return default_filename
+        else:
+            filename =  input('请输入过滤期刊文件名：')
+                if filename == '':
+                    print('文件不可为空'！)
+                    return self.get_filter_journals_filename()
+            return filename
+
+    def get_filter_journals(filter_name):
+        filter_journals = ()
+        try:
+            filter_txt = open(filter_name)
+            for line in filter_txt.readlines():
+                filter_journals.add(line)
+        except FileNotFoundError:
+            print('没找到该文件！请重新输入过滤期刊名文件名称。')
+            self.get_filter_journals(self.get_filter_journals_filename())
+        return filter_journals
+
+    def is__in_filter_or_phd(first_institute, journal):
+        return journal in self.filter_journals or first_institute = journal
 
     def ask_for_page_range(self):
         self.get_maxpage()
@@ -138,13 +180,16 @@ class CNKI_EXCEL_CONVERTOR(object):
                 if attempts == 50:
                     break
 
-    def get_search_results(self):
+    def settle_filename(self):
         pwd = os.getcwd()
         self.data_path = pwd + "/" + self.filename_prefix +\
             self.filename_postfix + '-data'
         self.data_path = helper.mk_data_dir(self.data_path, 0)
         self.txt_name = self.get_txt_name()
         self.excel_name = self.get_excel_name()
+
+
+    def get_search_results(self):
         txt = open(helper.get_file_path(self.data_path, self.txt_name),
                    'a+', encoding='utf-8')
 
@@ -195,12 +240,11 @@ class CNKI_EXCEL_CONVERTOR(object):
 
         # make a template for the excel according the CSSCI txt template
         excel_path = helper.get_file_path(self.data_path, self.excel_name)
-        excel = xlsxwriter.Workbook(excel_path)
-        sheet = excel.add_worksheet()
+        excel = Workbook()
+        sheet = excel.active
+        sheet.append(self.CSSCI_categories)
         print("\n \t \t \t \t \t ************* 开始文章详情页爬虫" +
               " ************* \t \t \t \t \t \n")
-        for i in range(len(self.CSSCI_categories)):
-            sheet.write(0, i, self.CSSCI_categories[i])
 
         # scrabber every article
         sum_article = len(article_urls_and_titles)
@@ -212,15 +256,15 @@ class CNKI_EXCEL_CONVERTOR(object):
             article_url = article_url_and_title_list[0]
             print('第' + str(i + 1) + '篇文章：' + article_url)
             title = article_url_and_title_list[1]
-            article = article_extractor.ARTICLE_EXTRACTOR(title, article_url)
+            article = ARTICLE_EXTRACTOR(title, article_url)
             article_infos = [title, ''] + article.get_all_article_info()
             # print(article_infos)
-            for j in range(len(article_infos)):
-                info = article_infos[j]
-                sheet.write(i + 1, j, info)
+            if self.only_filter_or_phd:
+                if self.is__in_filter_or_phd(article_infos[5], article_infos[4]):
+                    sheet.append(article_infos)
             else:
-                pass
-        excel.close()
+                sheet.append(article_infos)
+        excel.close(excel_path)
         txt.close()
 
     def convert(self):
