@@ -267,6 +267,6 @@ class CNKI_EXCEL_CONVERTOR(object):
         self.get_search_results()
         self.get_article_results()
 
-# test = CNKI_EXCEL_CONVERTOR()
-# test.introduction()
-# test.get_article_results()
+test = CNKI_EXCEL_CONVERTOR()
+#test.settle_filter()
+print(test.filter_journals)

@@ -5,6 +5,7 @@ import helper
 import socket
 import re
 import sys
+from random import randint
 sys.setrecursionlimit(100)
 
 
@@ -164,7 +165,10 @@ class ARTICLE_EXTRACTOR(object):
                 end_list_index = label_list_index + 1
                 end_soup = self.misc_soup_labels_list[end_list_index]
                 end_index = self.misc_soup_list.index(end_soup.get_text())
-            content_list = self.misc_soup_list[label_index + 1:end_index]
+            if label_index + 1 == end_index:
+                content_list = [self.misc_soup_list[end_index]]
+            else:
+                content_list = self.misc_soup_list[label_index + 1:end_index]
             return content_list
         else:
             return []
@@ -313,4 +317,5 @@ class ARTICLE_EXTRACTOR(object):
 #     'sdfasg', 'http://youxian.cnki.com.cn/yxdetail.aspx?filename=CZSK201603013&dbname=CJFDPREN')
 # test = ARTICLE_EXTRACTOR(
 #     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
-# print(test.get_all_article_info())
+#test = ARTICLE_EXTRACTOR('dsag','http://www.cnki.com.cn/Article/CJFDTOTAL-YWJS201706016.htm')
+#print(test.get_all_article_info())

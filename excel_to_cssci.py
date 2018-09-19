@@ -65,6 +65,6 @@ class Excel_TO_CSSCI(object):
         cssci_txt.close()
 
 
-# test = Excel_TO_CSSCI(r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\中考"
-#                      )
-# test.convert()
+test = Excel_TO_CSSCI(r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\th-中考-ti-语文-au-　-ab-　-qw-　-cnki_to_text-data"
+                     )
+test.convert()
