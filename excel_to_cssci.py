@@ -5,11 +5,11 @@ import helper
 from random import randint
 
 
-class Excel_TO_CSSCI(object):
-    """docstring for  Excel_TO_CSSCI"""
+class EXCEL_TO_CSSCI(object):
+    """docstring for  EXCEL_TO_CSSCI"""
 
     def __init__(self, data_path):
-        super(Excel_TO_CSSCI, self).__init__()
+        super(EXCEL_TO_CSSCI, self).__init__()
         self.data_path = data_path
         self.excels_path = []
         self.CSSCI_categories = ['【来源篇名】', '【英文篇名】', '【来源作者】',
@@ -66,6 +66,6 @@ class Excel_TO_CSSCI(object):
 
 # test = Excel_TO_CSSCI(r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\th-中考-ti-语文-au-　-ab-　-qw-　-cnki_to_text-data"
         # )
-test = Excel_TO_CSSCI(
-    '/home/bryan/CNKI_CItation_Converter_For_CiteSpace/th-卓越教师-ti-　-au-　-ab-　-qw-　-cnki_to_text-data_1')
-test.convert()
+#test = Excel_TO_CSSCI(
+#    r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\th-中考-ti-语文-cnki_to_text-data")
+#test.convert()

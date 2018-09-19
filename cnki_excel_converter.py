@@ -9,6 +9,7 @@ import helper
 import socket
 from article_extractor import ARTICLE_EXTRACTOR
 import urllib
+import codecs
 
 
 class CNKI_EXCEL_CONVERTOR(object):
@@ -58,7 +59,8 @@ class CNKI_EXCEL_CONVERTOR(object):
     def settle_filter(self):
         self.ask_only_filter_or_phd()
         filename = self.get_filter_journals_filename()
-        self.filter_journals = self.get_filter_journals(filename)
+        filepath = helper.get_file_path(os.getcwd(), filename)
+        self.filter_journals = self.get_filter_journals(filepath)
 
     def ask_only_filter_or_phd(self):
         if helper.query_yes_no('您是否只需要自己设定的过滤期刊名称和硕博士论文？'):
@@ -78,13 +80,12 @@ class CNKI_EXCEL_CONVERTOR(object):
                 return self.get_filter_journals_filename()
             return filename
 
-    def get_filter_journals(self, filter_name):
+    def get_filter_journals(self, filter_path):
         try:
-            return set(line.strip() for line in open(filter_name))
+            return set(line.stip() for line in open(filter_path, encoding="utf8").read())
         except OSError:
             print('没找到该文件！请重新输入过滤期刊名文件名称。')
             self.get_filter_journals(self.get_filter_journals_filename())
-        return filter_journals
 
     def is_in_filter_or_phd(self, first_institute, journal):
         return journal in self.filter_journals or (first_institute == journal and first_institute != '')
@@ -272,3 +273,5 @@ class CNKI_EXCEL_CONVERTOR(object):
 # test = CNKI_EXCEL_CONVERTOR()
 # #test.settle_filter()
 # print(test.filter_journals)
+        
+        

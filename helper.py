@@ -138,20 +138,24 @@ def have_another_choice(txt, another_choice):
         return txt
 
 
-def choose_data_path(self):
+def get_choices():
     file_list = os.listdir('.')
+    print(file_list)
     dir_list = []
-    i = 0
     print("你可以选择数据文件夹有：")
+    i = 1
     for file in file_list:
         if os.path.isdir(file):
             print(str(i) + ') ' + file)
             dir_list.append(file)
             i += 1
-    choice = input('你选择几号文件夹？(输入数字即可)')
+    choices = input('你选择几号文件夹？(以1 2 3输入数字,注意一个空格)').split(' ')
     try:
-        choice = int(choice)
+        data_dirs = []
+        for choice in choices:
+            choice = int(choice)
+            data_dirs.append(dir_list[choice -1])
+        return data_dirs
     except ValueError:
         print('请输入数字！')
-        self.choose_data_path()
-    self.data_path = dir_list[i]
+        get_choices()

@@ -119,7 +119,6 @@ class ARTICLE_EXTRACTOR(object):
                     institutes_list = []
         if institutes_list == []:
             self.success = False
-        print(institutes_list)
         return helper.split_with_semi_colon(institutes_list)
 
     def get_institutes_author_match_num(self):
