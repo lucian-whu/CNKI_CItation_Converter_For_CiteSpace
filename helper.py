@@ -97,11 +97,11 @@ def join_with_splash(to_be_joined):
 
 
 def split_with_semi_colon(to_be_split):
-    for i in range(len(to_be_split)):
-        name = to_be_split[i]
+    for i in range(len(to_be_split) - 1):
+        name = to_be_split[i].strip()
         splited = name.split(';')
         try:
-            splited.remove('')
+            splited.remove(' ')
         except ValueError:
             pass
         to_be_split = to_be_split[:i] + \
@@ -132,7 +132,7 @@ def hasNumbers(inputString):
 
 
 def have_another_choice(txt, another_choice):
-    if txt is None:
+    if txt == '':
         return another_choice
     else:
         return txt

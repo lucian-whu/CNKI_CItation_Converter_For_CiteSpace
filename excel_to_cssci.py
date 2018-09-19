@@ -48,23 +48,24 @@ class Excel_TO_CSSCI(object):
         cssci_txt.write(self.start_page)
         for i in range(2, sheet.max_row + 1):
             for j in range(1, sheet.max_column + 1):
+                info = helper.none_to_empty_string(
+                    sheet.cell(row=i, column=j).value)
                 if j == 9:
                     line = self.CSSCI_categories[j - 1] + helper.have_another_choice(
-                        sheet.cell(row=i, column=j).value, self.pseudoCN[randint(0, 6)]) + '\n'
+                        info, self.pseudoCN[randint(0, 6)]) + '\n'
                 elif j == 10:
-                    line = self.CSSCI_categories[j - 1] + helper.none_to_empty_string(
-                        sheet.cell(row=i, column=j).value) + self.pseudoDates[randint(0, 4)] + '\n'
+                    line = self.CSSCI_categories[j - 1] + info + self.pseudoDates[randint(0, 4)] + '\n'
                 elif j == 13:
-                    line = self.CSSCI_categories[j - 1] + '\n' + helper.none_to_empty_string(
-                        sheet.cell(row=i, column=j).value)
+                    line = self.CSSCI_categories[j - 1] + '\n' + info
                 else:
-                    line = self.CSSCI_categories[j - 1] + helper.none_to_empty_string(
-                        sheet.cell(row=i, column=j).value) + '\n'
+                    line = self.CSSCI_categories[j - 1] + info + '\n'
                 cssci_txt.write(line)
             cssci_txt.write(self.CSSCI_seperation_line)
         cssci_txt.close()
 
 
-test = Excel_TO_CSSCI(r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\th-中考-ti-语文-au-　-ab-　-qw-　-cnki_to_text-data"
-                     )
+# test = Excel_TO_CSSCI(r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\th-中考-ti-语文-au-　-ab-　-qw-　-cnki_to_text-data"
+        # )
+test = Excel_TO_CSSCI(
+    '/home/bryan/CNKI_CItation_Converter_For_CiteSpace/th-卓越教师-ti-　-au-　-ab-　-qw-　-cnki_to_text-data_1')
 test.convert()

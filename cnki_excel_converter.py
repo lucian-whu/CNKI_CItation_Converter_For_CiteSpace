@@ -87,7 +87,7 @@ class CNKI_EXCEL_CONVERTOR(object):
         return filter_journals
 
     def is_in_filter_or_phd(self, first_institute, journal):
-        return journal in self.filter_journals or first_institute == journal
+        return journal in self.filter_journals or (first_institute == journal and first_institute != '')
 
     def ask_for_page_range(self):
         self.get_maxpage()
@@ -257,6 +257,8 @@ class CNKI_EXCEL_CONVERTOR(object):
             if self.only_filter_or_phd:
                 if self.is_in_filter_or_phd(article_infos[5], article_infos[4]):
                     sheet.append(article_infos)
+                else:
+                    pass
             else:
                 sheet.append(article_infos)
         excel.save(excel_path)
@@ -267,6 +269,6 @@ class CNKI_EXCEL_CONVERTOR(object):
         self.get_search_results()
         self.get_article_results()
 
-test = CNKI_EXCEL_CONVERTOR()
-#test.settle_filter()
-print(test.filter_journals)
+# test = CNKI_EXCEL_CONVERTOR()
+# #test.settle_filter()
+# print(test.filter_journals)

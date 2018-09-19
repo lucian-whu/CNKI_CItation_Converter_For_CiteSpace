@@ -59,6 +59,7 @@ class ARTICLE_EXTRACTOR(object):
                 self.get_misc_soup()
             except RuntimeError:
                 print('网路故障，舍弃该文章。\n')
+                self.success = False
 
     def get_misc_soup_list(self):
         if self.misc_soup is not None:
@@ -90,6 +91,8 @@ class ARTICLE_EXTRACTOR(object):
         authors_list = []
         for author_soup in authors_soup:
             authors_list.append(author_soup.get_text())
+        if authors_list == []:
+            self.success = False
         return authors_list
 
     def get_funding_source(self):
@@ -114,6 +117,9 @@ class ARTICLE_EXTRACTOR(object):
                             institutes_list = []
                 except IndexError:
                     institutes_list = []
+        if institutes_list == []:
+            self.success = False
+        print(institutes_list)
         return helper.split_with_semi_colon(institutes_list)
 
     def get_institutes_author_match_num(self):
@@ -318,4 +324,5 @@ class ARTICLE_EXTRACTOR(object):
 # test = ARTICLE_EXTRACTOR(
 #     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
 #test = ARTICLE_EXTRACTOR('dsag','http://www.cnki.com.cn/Article/CJFDTOTAL-YWJS201706016.htm')
-#print(test.get_all_article_info())
+# test = ARTICLE_EXTRACTOR('sdfag', 'http://www.cnki.com.cn/Article/CJFDTOTAL-YWJS200503036.htm')
+# print(test.get_all_article_info())
