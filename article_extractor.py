@@ -90,7 +90,7 @@ class ARTICLE_EXTRACTOR(object):
         authors_soup = authors_soup.find_all('a')
         authors_list = []
         for author_soup in authors_soup:
-            authors_list.append(author_soup.get_text())
+            authors_list.append(author_soup.get_text().strip())
         if authors_list == []:
             self.success = False
         return authors_list
@@ -103,19 +103,19 @@ class ARTICLE_EXTRACTOR(object):
             institutes_list = self.get_misc_soup_content('【作者单位】')
             if institutes_list == []:
                 raise ValueError
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, IndexError):
             try:
                 institutes_list = self.get_misc_soup_content('【作者单位】：')
                 if institutes_list == []:
                     raise AttributeError
-            except AttributeError:
+            except (AttributeError, IndexError):
                 try:
                     institutes_list = self.get_misc_soup_content('【学位授予单位】：')
                     if institutes_list == []:
                         institutes_list = [self.misc_soup_list[1]]
                         if institutes_list[1] == '':
                             institutes_list = []
-                except IndexError:
+                except (IndexError, AttributeError):
                     institutes_list = []
         if institutes_list == []:
             self.success = False
@@ -323,5 +323,5 @@ class ARTICLE_EXTRACTOR(object):
 # test = ARTICLE_EXTRACTOR(
 #     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
 #test = ARTICLE_EXTRACTOR('dsag','http://www.cnki.com.cn/Article/CJFDTOTAL-YWJS201706016.htm')
-# test = ARTICLE_EXTRACTOR('sdfag', 'http://www.cnki.com.cn/Article/CJFDTOTAL-YWJS200503036.htm')
-# print(test.get_all_article_info())
+#test = ARTICLE_EXTRACTOR('sdfag', 'http://www.cnki.com.cn/Article/CJFDTotal-KJJF201107011.htm')
+#print(test.get_all_article_info())

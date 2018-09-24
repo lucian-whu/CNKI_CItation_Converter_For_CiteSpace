@@ -69,3 +69,4 @@ class EXCEL_TO_CSSCI(object):
 #test = Excel_TO_CSSCI(
 #    r"C:\Users\Administrator\Desktop\citespace\CNKI_CItation_Converter_For_CiteSpace\th-中考-ti-语文-cnki_to_text-data")
 #test.convert()
+

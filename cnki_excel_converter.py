@@ -82,13 +82,16 @@ class CNKI_EXCEL_CONVERTOR(object):
 
     def get_filter_journals(self, filter_path):
         try:
-            return set(line.stip() for line in open(filter_path, encoding="utf8").read())
+            filter_journal_txt = open(filter_path, encoding='utf-8')
+            lines = filter_journal_txt.readlines()
+            lines[0] = lines[0][1:]
+            return set(line.strip() for line in lines)
         except OSError:
             print('没找到该文件！请重新输入过滤期刊名文件名称。')
             self.get_filter_journals(self.get_filter_journals_filename())
 
     def is_in_filter_or_phd(self, first_institute, journal):
-        return journal in self.filter_journals or (first_institute == journal and first_institute != '')
+        return (journal in self.filter_journals and journal != '') or (first_institute == journal and first_institute != '')
 
     def ask_for_page_range(self):
         self.get_maxpage()
