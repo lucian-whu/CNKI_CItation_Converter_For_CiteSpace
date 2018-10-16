@@ -9,7 +9,6 @@ import helper
 import socket
 from article_extractor import ARTICLE_EXTRACTOR
 import urllib
-import codecs
 
 
 class CNKI_EXCEL_CONVERTOR(object):
@@ -18,16 +17,15 @@ class CNKI_EXCEL_CONVERTOR(object):
     def __init__(self):
         super(CNKI_EXCEL_CONVERTOR, self).__init__()
         self.search_paras = {
-            "主题": "教科书",
-            "篇名": "教科书",
-            "作者": "石鸥",
-            "摘要": "教科书",
-            "全文": "教科书",
+            "主题": "中考",
+            "篇名": "语文",
+            "作者": "　",
+            "摘要": "　",
+            "全文": "　",
         }
-        self.search_url = ""
+        self.search_urls = []
         self.soup = ""
         self.maxpage = 1
-        self.search_page_range = {"开始页码": 1, "结束页码": 2}
         self.num_per_page = 15
         self.filename_prefix = ""
         self.filename_postfix = "cnki_to_text"
@@ -40,7 +38,7 @@ class CNKI_EXCEL_CONVERTOR(object):
                                  '【机构名称】', '【第一作者】', '【中图类号】',
                                  '【年代卷期】', '【关 键 词】', '【基金类别】',
                                  '【参考文献】']
-        self.filter_journals = ()
+        self.filter_journals = ['课程.教材.教法']
         self.only_filter_or_phd = False
 
     def introduction(self):
@@ -49,12 +47,10 @@ class CNKI_EXCEL_CONVERTOR(object):
               "xt文件里是根据你限定的搜索方法得到的每一篇文献的网址和篇名，Exc" +
               "el文件将会是详细的信息。为了链接速度更快，请您最好使用教育网！\n 接下来，我们开始第一步！ \n")
         self.ask_for_search_parameters(self.search_paras)
-        self.config_to_search_url()
-        print(self.search_url)
-        self.update_soup(self.search_url)
-        self.ask_for_page_range()
-        self.settle_filename()
         self.settle_filter()
+        self.config_to_search_urls()
+        print(self.search_urls)
+        self.settle_filename()
 
     def settle_filter(self):
         self.ask_only_filter_or_phd()
@@ -85,30 +81,13 @@ class CNKI_EXCEL_CONVERTOR(object):
             filter_journal_txt = open(filter_path, encoding='utf-8')
             lines = filter_journal_txt.readlines()
             lines[0] = lines[0][1:]
-            return set(line.strip() for line in lines)
+            return list(line.strip() for line in lines)
         except OSError:
             print('没找到该文件！请重新输入过滤期刊名文件名称。')
             self.get_filter_journals(self.get_filter_journals_filename())
 
     def is_in_filter_or_phd(self, first_institute, journal):
         return (journal in self.filter_journals and journal != '') or (first_institute == journal and first_institute != '')
-
-    def ask_for_page_range(self):
-        self.get_maxpage()
-        if helper.query_yes_no(
-                "\n 共搜索到" + str(self.maxpage) + "页结果，你需要所有的搜索结果吗？"):
-            self.search_page_range["结束页码"] = self.maxpage
-        else:
-            self.ask_for_search_parameters(self.search_page_range)
-            if self.isPageRangeIlegeal():
-                self.ask_for_page_range()
-
-    def isPageRangeIslegal(self):
-        if self.search_page_range["开始页码"] <= 0:
-            return False
-        elif self.search_page_range["结束页码"] > self.maxpage:
-            return False
-        return True
 
     def get_maxpage(self):
         try:
@@ -117,8 +96,12 @@ class CNKI_EXCEL_CONVERTOR(object):
             print('共搜索到' + str(max_item) + '篇文献')
             self.maxpage = math.ceil(max_item / self.num_per_page)
         except AttributeError:
-            print("搜索结果太少，请重新定义搜索参数")
-            self.introduction()
+            s = '抱歉，没有找到与您查询的'
+            if s in self.soup.get_text():
+                print("此期刊无相关文章")
+                self.maxpage = 0
+            else:
+                self.maxpage = 1
 
     def ask_for_search_parameter(self, para, paras):
         answer = input(para + "(不填为默认" + para + ':' +
@@ -130,7 +113,7 @@ class CNKI_EXCEL_CONVERTOR(object):
         for para in paras.keys():
             self.ask_for_search_parameter(para, paras)
 
-    def config_to_search_url(self):
+    def config_to_search_urls(self):
         paras_cn_en = {"主题": "theme",
                        "篇名": "title",
                        "作者": "author",
@@ -150,15 +133,17 @@ class CNKI_EXCEL_CONVERTOR(object):
             self.filename_prefix += para[:2] + '-' + config_copy[para] + '-'
             if config_copy[para] != '\u3000':
                 url_keywords += para + "%3a" + quote(config_copy[para]) + "+"
-
-        if url_keywords == "":
-            print("你没有搜索参数，请重新输入！")
-            self.ask_for_search_parameters(self.search_paras)
-            url_keywords = self.config_to_search_url()
-
-        self.search_url = "http://search.cnki.com.cn/search.aspx?q=" +\
-            url_keywords[0:-1] + "&cluster=all&val=&rank=relevant&p="
-        return url_keywords
+        for mg in self.filter_journals:
+            self.search_urls.append("http://search.cnki.com.cn/search.aspx?q=" +
+                                    url_keywords + 'magazine%3a' +
+                                    quote(mg) + "&cluster=all&val=&rank=relevant&p=")
+        #master and phd
+        self.search_urls.append("http://search.cnki.com.cn/search.aspx?q=" +
+                                url_keywords[:-1] +
+                                "&rank=relevant&cluster=zyk&val=CMFDTOTAL&p=")
+        self.search_urls.append("http://search.cnki.com.cn/search.aspx?q=" +
+                                url_keywords[:-1] +
+                                "&rank=relevant&cluster=zyk&val=CDFDTOTAL&p=")
 
     def update_soup(self, page_search_url):
         attempts = 0
@@ -192,23 +177,39 @@ class CNKI_EXCEL_CONVERTOR(object):
         txt = open(helper.get_file_path(self.data_path, self.txt_name),
                    'a+', encoding='utf-8')
 
-        start_page = self.search_page_range["开始页码"] - 1  # the zero start
-        end_page = self.search_page_range["结束页码"]
-
         print("\n \t \t \t \t \t ************* 开始搜索页爬虫" +
               " ************* \t \t \t \t \t \n")
         # store every search item in every page in the txt file
-        for current_page in range(start_page, end_page):
-            url_end_token = str(current_page * self.num_per_page)
-            page_search_url = self.search_url + url_end_token
-            print('第' + str(current_page) + '页： \n' + page_search_url)
-            self.update_soup(page_search_url)
-            items = self.soup.find_all('div', class_="wz_content")
-            for item in items:
-                title_and_url = item.find('a')
-                title = title_and_url.get_text()
-                article_url = title_and_url.get('href')
-                txt.write(article_url + '\t' + title + '\t' + '\n')
+        for i in range(len(self.search_urls)):
+            print("\n \t \t \t \t \t ************* 开始按照期刊搜索" +
+                  " ************* \t \t \t \t \t \n")
+            if(i < len(self.filter_journals)):
+                print(self.filter_journals[i])
+            elif i == len(self.search_urls) - 2:
+                print("\n \t \t \t \t \t ************* 开始硕士论文搜索搜索" +
+                      " ************* \t \t \t \t \t \n")
+            else:
+                print("\n \t \t \t \t \t ************* 开始博士论文搜索" +
+                      " ************* \t \t \t \t \t \n")
+            search_url = self.search_urls[i]
+            print(search_url)
+            self.update_soup(search_url)
+            # find page
+            start_page = 0
+            self.update_soup(search_url)
+            self.get_maxpage()
+            end_page = self.maxpage
+            for current_page in range(start_page, end_page):
+                url_end_token = str(current_page * self.num_per_page)
+                page_search_url = search_url + url_end_token
+                self.update_soup(page_search_url)
+                print('第' + str(current_page) + '页： \n' + page_search_url)
+                items = self.soup.find_all('div', class_="wz_content")
+                for item in items:
+                    title_and_url = item.find('a')
+                    title = title_and_url.get_text()
+                    article_url = title_and_url.get('href')
+                    txt.write(article_url + '\t' + title + '\t' + '\n')
         txt.close()
 
     def get_filename(self, extention_index):
@@ -276,5 +277,3 @@ class CNKI_EXCEL_CONVERTOR(object):
 # test = CNKI_EXCEL_CONVERTOR()
 # #test.settle_filter()
 # print(test.filter_journals)
-        
-        

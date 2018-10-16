@@ -267,7 +267,7 @@ class ARTICLE_EXTRACTOR(object):
 
     def attempt_to_connect(self):
         attempts = 0
-        while attempts < 50 and not self.success:
+        while attempts < 10 and not self.success:
             try:
                 html = urlopen(self.article_url)
                 self.article_soup = BeautifulSoup(html, 'html.parser')
@@ -276,14 +276,14 @@ class ARTICLE_EXTRACTOR(object):
             except socket.error:
                 attempts += 1
                 print("第" + str(attempts) + "次重试！！")
-                if attempts == 50:
+                if attempts == 10:
                     self.success = False
                     print("此网页无法打开！")
                     break
             except OSError:
                 attempts += 1
                 print("第" + str(attempts) + "次重试！！")
-                if attempts == 50:
+                if attempts == 10:
                     self.success = False
                     print("此网页无法打开！")
                     break
