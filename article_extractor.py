@@ -243,7 +243,8 @@ class ARTICLE_EXTRACTOR(object):
                 title_soup = citation_soup.find('a')
                 title = title_soup.get_text()[:-1]
                 authors = title_soup.previous_element
-                author = authors.split(';')[0]
+                author = helper.remove_white_trail_colon_wise(
+                    authors.split(';')[0])
                 journal_time_list = citation_soup.get_text().split(';')[-2:]
                 journal = journal_time_list[0]
                 time = re.search(r"[0-9]*", journal_time_list[1]).group()
@@ -323,5 +324,6 @@ class ARTICLE_EXTRACTOR(object):
 # test = ARTICLE_EXTRACTOR(
 #     'sdf', 'http://cdmd.cnki.com.cn/CDMD/DetailNew.ashx?url=/Article/CDMD-10118-1016100574.htm')
 #test = ARTICLE_EXTRACTOR('dsag','http://www.cnki.com.cn/Article/CJFDTOTAL-YWJS201706016.htm')
-#test = ARTICLE_EXTRACTOR('sdfag', 'http://www.cnki.com.cn/Article/CJFDTotal-KJJF201107011.htm')
-#print(test.get_all_article_info())
+test = ARTICLE_EXTRACTOR(
+    'sdfag', 'http://cdmd.cnki.com.cn/Article/CDMD-10167-1015321902.htm')
+print(test.get_all_article_info())

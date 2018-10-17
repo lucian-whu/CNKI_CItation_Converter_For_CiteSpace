@@ -154,8 +154,15 @@ def get_choices():
         data_dirs = []
         for choice in choices:
             choice = int(choice)
-            data_dirs.append(dir_list[choice -1])
+            data_dirs.append(dir_list[choice - 1])
         return data_dirs
     except ValueError:
         print('请输入数字！')
         get_choices()
+
+
+def remove_white_trail_colon_wise(to_be_split):
+    lst = to_be_split.split(',')
+    for i in range(len(lst)):
+        lst[i] = lst[i].strip()
+    return ','.join(lst)

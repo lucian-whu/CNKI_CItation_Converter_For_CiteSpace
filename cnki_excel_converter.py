@@ -17,8 +17,8 @@ class CNKI_EXCEL_CONVERTOR(object):
     def __init__(self):
         super(CNKI_EXCEL_CONVERTOR, self).__init__()
         self.search_paras = {
-            "主题": "中考",
-            "篇名": "语文",
+            "主题": "卓越教师",
+            "篇名": "　",
             "作者": "　",
             "摘要": "　",
             "全文": "　",
@@ -81,7 +81,7 @@ class CNKI_EXCEL_CONVERTOR(object):
             filter_journal_txt = open(filter_path, encoding='utf-8')
             lines = filter_journal_txt.readlines()
             lines[0] = lines[0][1:]
-            return list(line.strip() for line in lines)
+            return list(set(line.strip() for line in lines))
         except OSError:
             print('没找到该文件！请重新输入过滤期刊名文件名称。')
             self.get_filter_journals(self.get_filter_journals_filename())
@@ -180,9 +180,9 @@ class CNKI_EXCEL_CONVERTOR(object):
         print("\n \t \t \t \t \t ************* 开始搜索页爬虫" +
               " ************* \t \t \t \t \t \n")
         # store every search item in every page in the txt file
+        print("\n \t \t \t \t \t ************* 开始按照期刊搜索" +
+              " ************* \t \t \t \t \t \n")
         for i in range(len(self.search_urls)):
-            print("\n \t \t \t \t \t ************* 开始按照期刊搜索" +
-                  " ************* \t \t \t \t \t \n")
             if(i < len(self.filter_journals)):
                 print(self.filter_journals[i])
             elif i == len(self.search_urls) - 2:
@@ -196,9 +196,9 @@ class CNKI_EXCEL_CONVERTOR(object):
             self.update_soup(search_url)
             # find page
             start_page = 0
-            self.update_soup(search_url)
             self.get_maxpage()
             end_page = self.maxpage
+            print(end_page)
             for current_page in range(start_page, end_page):
                 url_end_token = str(current_page * self.num_per_page)
                 page_search_url = search_url + url_end_token
@@ -209,6 +209,7 @@ class CNKI_EXCEL_CONVERTOR(object):
                     title_and_url = item.find('a')
                     title = title_and_url.get_text()
                     article_url = title_and_url.get('href')
+                    print(article_url)
                     txt.write(article_url + '\t' + title + '\t' + '\n')
         txt.close()
 
